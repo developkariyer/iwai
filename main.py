@@ -1,6 +1,7 @@
 import json
 import logging
-from threading import Thread
+import time
+from threading import Thread, Lock
 from slack import send_message_to_channel
 from open_ai import chat_completion_request
 from pim import tools, system_prompt
@@ -16,11 +17,52 @@ def log_to_apache_error_log(message):
     """
     logging.error(message)
 
+# Deduplication global variables
+processed_events = {}
+event_lock = Lock()
+DEDUPLICATION_TIMEOUT = 300  # 5 minutes
+
+def is_duplicate(event_id):
+    """
+    Check if the event_id has already been processed.
+    """
+    current_time = time.time()
+    with event_lock:
+        # Remove old events
+        keys_to_remove = [key for key, timestamp in processed_events.items() if current_time - timestamp > DEDUPLICATION_TIMEOUT]
+        for key in keys_to_remove:
+            del processed_events[key]
+
+        # Check for duplicates
+        if event_id in processed_events:
+            return True
+
+        # Mark this event as processed
+        processed_events[event_id] = current_time
+        return False
+
+# Message caching for avoiding redundant OpenAI calls
+user_message_cache = {}
+message_cache_lock = Lock()
+
+def get_cached_response(user_message):
+    """
+    Retrieve cached response for a user message, if available.
+    """
+    with message_cache_lock:
+        return user_message_cache.get(user_message)
+
+def cache_response(user_message, response):
+    """
+    Cache the response for a user message.
+    """
+    with message_cache_lock:
+        user_message_cache[user_message] = response
+
 def process_openai_response(message_text):
     """
     Process the Slack message through OpenAI, handle tool calls, and return the assistant's response.
     """
-    # Prepare the messages for OpenAI
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": message_text}
@@ -68,7 +110,6 @@ def process_openai_response(message_text):
         log_to_apache_error_log(f"Error in process_openai_response: {str(e)}")
         return "I'm sorry, there was an issue processing your request."
 
-
 def handle_event_async(event):
     """
     Handles the Slack event asynchronously.
@@ -78,8 +119,16 @@ def handle_event_async(event):
         message_text = message_text.replace(f"<@{BOT_USER_ID}>", "").strip()
 
         if message_text:
+            # Check the cache first
+            cached_response = get_cached_response(message_text)
+            if cached_response:
+                log_to_apache_error_log(f"Using cached response for message: {message_text}")
+                send_message_to_channel(cached_response, event["ts"])
+                return
+
             # Process through OpenAI
             openai_response = process_openai_response(message_text)
+            cache_response(message_text, openai_response)
 
             # Respond back in the same thread
             send_message_to_channel(openai_response, event["ts"])
@@ -109,8 +158,16 @@ def application(environ, start_response):
         # Handle Slack event callbacks
         if slack_event.get("type") == "event_callback":
             event = slack_event.get("event", {})
-            event_type = event.get("type")
+            event_id = slack_event.get("event_id")
 
+            # Skip duplicate events
+            if is_duplicate(event_id):
+                log_to_apache_error_log(f"Duplicate event detected: {event_id}")
+                response_headers = [('Content-type', 'text/plain')]
+                start_response('200 OK', response_headers)
+                return [b"Duplicate event skipped"]
+
+            event_type = event.get("type")
             if event_type == "app_mention" and "text" in event:
                 # Immediately send 200 OK to Slack
                 response_headers = [('Content-type', 'text/plain')]
