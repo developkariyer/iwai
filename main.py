@@ -3,12 +3,10 @@ import logging
 from slack import send_message_to_channel
 from open_ai import chat_completion_request
 from pim import tools, system_prompt
+from config import BOT_USER_ID
 
 # Configure logging to log to Apache's error log
 logging.basicConfig(level=logging.INFO)
-
-# Bot configuration
-BOT_USER_ID = "U080PEA1HAR"
 
 def log_to_apache_error_log(message):
     """
@@ -25,6 +23,8 @@ def process_openai_response(message_text):
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": message_text}
     ]
+    # Log messages
+    log_to_apache_error_log(f"Messages: {json.dumps(messages)}")
 
     # Call OpenAI
     response = chat_completion_request(messages, tools=tools)
