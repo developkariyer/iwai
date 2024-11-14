@@ -35,11 +35,12 @@ def process_openai_response(message_text):
         if response and response.choices:
             # Extract the first choice
             choice = response.choices[0]
-            
-            # Check for tool calls
-            if choice.message.function_call:
-                tool_name = choice.message.function_call.name
-                tool_arguments = json.loads(choice.message.function_call.arguments)
+            message = choice.message
+
+            # Check if the response includes a function call
+            if message.function_call:
+                tool_name = message.function_call.name
+                tool_arguments = json.loads(message.function_call.arguments)
                 log_to_apache_error_log(f"Function Call Detected: {tool_name} with arguments {tool_arguments}")
 
                 # Execute the tool function
@@ -56,11 +57,11 @@ def process_openai_response(message_text):
                 # Get the assistant's final response
                 final_response = chat_completion_request(messages)
                 if final_response.choices:
-                    assistant_message = final_response.choices[0].message["content"]
+                    assistant_message = final_response.choices[0].message.content
                     return assistant_message
 
-            # If no tool calls, return the content directly
-            assistant_message = choice.message["content"]
+            # If no function calls, return the content directly
+            assistant_message = message.content
             return assistant_message or "I'm sorry, I couldn't process your request at the moment."
 
     except Exception as e:
