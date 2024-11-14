@@ -1,4 +1,11 @@
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
-BOT_USER_ID = "U080PEA1HAR"
-GPT_MODEL = "gpt-4o"
-OPENAI_API_KEY = "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"
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Get values from environment variables
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+BOT_USER_ID = os.getenv("BOT_USER_ID")
+GPT_MODEL = os.getenv("GPT_MODEL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
