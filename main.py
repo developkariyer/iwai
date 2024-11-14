@@ -1,5 +1,6 @@
 import json
 import logging
+from threading import Thread
 from slack import send_message_to_channel
 from open_ai import chat_completion_request
 from pim import tools, system_prompt
@@ -33,6 +34,23 @@ def process_openai_response(message_text):
         return assistant_message
     return "I'm sorry, I couldn't process your request at the moment."
 
+def handle_event_async(event):
+    """
+    Handles the Slack event asynchronously.
+    """
+    try:
+        message_text = event["text"]
+        message_text = message_text.replace(f"<@{BOT_USER_ID}>", "").strip()
+
+        if message_text:
+            # Process through OpenAI
+            openai_response = process_openai_response(message_text)
+
+            # Respond back in the same thread
+            send_message_to_channel(openai_response, event["ts"])
+    except Exception as e:
+        log_to_apache_error_log(f"Error in async event handling: {str(e)}")
+
 def application(environ, start_response):
     """
     WSGI application to handle Slack events, respond in threads, and process via OpenAI.
@@ -59,17 +77,13 @@ def application(environ, start_response):
             event_type = event.get("type")
 
             if event_type == "app_mention" and "text" in event:
-                message_text = event["text"]
-                message_text = message_text.replace(f"<@{BOT_USER_ID}>", "").strip()
+                # Immediately send 200 OK to Slack
+                response_headers = [('Content-type', 'text/plain')]
+                start_response('200 OK', response_headers)
+                Thread(target=handle_event_async, args=(event,)).start()
+                return [b"Event received"]
 
-                # Process through OpenAI
-                if message_text:
-                    openai_response = process_openai_response(message_text)
-
-                    # Respond back in the same thread
-                    send_message_to_channel(openai_response, event["ts"])
-
-        # Send a generic "200 OK" response to Slack
+        # Default 200 OK response for other events
         response_headers = [('Content-type', 'text/plain')]
         start_response('200 OK', response_headers)
         return [b"Event received"]
