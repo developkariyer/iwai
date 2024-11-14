@@ -89,7 +89,7 @@ def process_openai_response(message_text, event_ts):
                     # Execute the tool function
                     send_message_to_channel(f"INFO: Executing tool {tool_name} with arguments {tool_arguments}", event_ts)
                     tool_response = execute_function_call(tool_name, tool_arguments)
-                    send_message_to_channel(f"INFO: Tool {tool_name} responded with {tool_response}", event_ts)
+                    # send_message_to_channel(f"INFO: Tool {tool_name} responded with {tool_response}", event_ts)
                     log_to_apache_error_log(f"Tool Response: {tool_response}")
 
                     # Append the tool's result to the messages
