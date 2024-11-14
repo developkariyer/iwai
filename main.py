@@ -58,7 +58,6 @@ def cache_response(user_message, response):
     """
     with message_cache_lock:
         user_message_cache[user_message] = response
-
 def process_openai_response(message_text):
     """
     Process the Slack message through OpenAI, handle tool calls, and return the assistant's response.
@@ -79,8 +78,32 @@ def process_openai_response(message_text):
             choice = response.choices[0]
             message = choice.message
 
-            # Check if the response includes a function call
-            if message.function_call:
+            # Handle `tool_calls`
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                for tool_call in message.tool_calls:
+                    tool_name = tool_call.function.name
+                    tool_arguments = json.loads(tool_call.function.arguments)
+                    log_to_apache_error_log(f"Tool Call Detected: {tool_name} with arguments {tool_arguments}")
+
+                    # Execute the tool function
+                    tool_response = execute_function_call(tool_name, tool_arguments)
+                    log_to_apache_error_log(f"Tool Response: {tool_response}")
+
+                    # Append the tool's result to the messages
+                    messages.append({
+                        "role": "function",
+                        "name": tool_name,
+                        "content": json.dumps(tool_response)
+                    })
+
+                # Get the assistant's final response after tool calls
+                final_response = chat_completion_request(messages)
+                if final_response.choices:
+                    assistant_message = final_response.choices[0].message.content
+                    return assistant_message
+
+            # Handle `function_call`
+            elif message.function_call:
                 tool_name = message.function_call.name
                 tool_arguments = json.loads(message.function_call.arguments)
                 log_to_apache_error_log(f"Function Call Detected: {tool_name} with arguments {tool_arguments}")
@@ -89,7 +112,7 @@ def process_openai_response(message_text):
                 tool_response = execute_function_call(tool_name, tool_arguments)
                 log_to_apache_error_log(f"Tool Response: {tool_response}")
 
-                # Send the tool's result back to OpenAI for a final response
+                # Append the tool's result to the messages
                 messages.append({
                     "role": "function",
                     "name": tool_name,
@@ -102,13 +125,14 @@ def process_openai_response(message_text):
                     assistant_message = final_response.choices[0].message.content
                     return assistant_message
 
-            # If no function calls, return the content directly
+            # If no tool calls, return the content directly
             assistant_message = message.content
             return assistant_message or "I'm sorry, I couldn't process your request at the moment."
 
     except Exception as e:
         log_to_apache_error_log(f"Error in process_openai_response: {str(e)}")
         return "I'm sorry, there was an issue processing your request."
+
 
 def handle_event_async(event):
     """
