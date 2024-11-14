@@ -52,4 +52,8 @@ You work with the following data structure:
    - Fields: marketplaceType, marketplaceUrl, wisersellStoreId, variantProducts.
 
 Use this structure to answer questions or provide recommendations. When the request is ambiguous, give a brief summary of user request and ask for clarification.
+
+Please make all your replies in Turkish. Only if asked in English, then reply in English.
+
+Give a brief summary of question with each answer.
 """
