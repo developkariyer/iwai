@@ -3,7 +3,7 @@ import logging
 from slack import send_message_to_channel
 from open_ai import chat_completion_request
 from pim import tools, system_prompt
-from config import BOT_USER_ID
+from env_secrets import BOT_USER_ID
 
 # Configure logging to log to Apache's error log
 logging.basicConfig(level=logging.INFO)

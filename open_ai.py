@@ -1,6 +1,6 @@
 from openai import OpenAI
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from config import GPT_MODEL, OPENAI_API_KEY
+from env_secrets import GPT_MODEL, OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 

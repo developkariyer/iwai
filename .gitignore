@@ -5,5 +5,5 @@ venv/
 .DS_Store
 *.log
 .vscode
-
+env_secrets.py
 .env

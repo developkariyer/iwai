@@ -1,6 +1,6 @@
 import json
 import requests
-from config import SLACK_WEBHOOK_URL
+from env_secrets import SLACK_WEBHOOK_URL
 
 def send_message_to_channel(text, thread_ts):
     payload = {"text": text, "thread_ts": thread_ts}
