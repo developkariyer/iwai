@@ -1,5 +1,4 @@
 import logging
-import json
 
 # Configure logging to Apache error log
 def log_to_apache_error_log(message):
