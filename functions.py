@@ -11,28 +11,7 @@ def get_product_details(arguments):
         product_id = arguments.get("product_id")
         fields = arguments.get("fields", None)
         # Replace with actual logic
-        return {
-            "details": json.dumps({
-                'name': 'AHM-005 Epoxy End Table 50x50x48cm Orange',
-                'code': 'AHM0050E443D',
-                'weight': '7.00',
-                'deci': None,
-                'width': '66.00',
-                'length': '54.00',
-                'height': '8.00',
-                'extradata': {
-                    'Size': '50x50x48cm',
-                    'Color': 'Orange'
-                },
-                'arrsku': None,
-                'organizationId': 15,
-                'companyId': None,
-                'createdAt': '2024-10-12T07:31:32.298Z',
-                'updatedAt': '2024-11-10T12:45:43.542Z',
-                'categoryId': 28,
-                'subproducts': []
-            })
-        }
+        return {"details": "{'name': 'AHM-005 Epoxy End Table 50x50x48cm Orange', 'code': 'AHM0050E443D', 'weight': '7.00', 'deci': None, 'width': '66.00', 'length': '54.00', 'height': '8.00', 'extradata': {'Size': '50x50x48cm', 'Color': 'Orange'}, 'arrsku': None, 'organizationId': 15, 'companyId': None, 'createdAt': '2024-10-12T07:31:32.298Z', 'updatedAt': '2024-11-10T12:45:43.542Z', 'categoryId': 28, 'subproducts': []}"}
         return {"details": f"Details for product {product_id} with fields {fields}"}
     except Exception as e:
         log_to_apache_error_log(f"Error in get_product_details: {str(e)}")
