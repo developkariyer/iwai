@@ -58,7 +58,8 @@ def cache_response(user_message, response):
     """
     with message_cache_lock:
         user_message_cache[user_message] = response
-def process_openai_response(message_text):
+
+def process_openai_response(message_text, event_ts):
     """
     Process the Slack message through OpenAI, handle tool calls, and return the assistant's response.
     """
@@ -86,7 +87,9 @@ def process_openai_response(message_text):
                     log_to_apache_error_log(f"Tool Call Detected: {tool_name} with arguments {tool_arguments}")
 
                     # Execute the tool function
+                    send_message_to_channel(f"INFO: Executing tool {tool_name} with arguments {tool_arguments}", event_ts)
                     tool_response = execute_function_call(tool_name, tool_arguments)
+                    send_message_to_channel(f"INFO: Tool {tool_name} responded with {tool_response}", event_ts)
                     log_to_apache_error_log(f"Tool Response: {tool_response}")
 
                     # Append the tool's result to the messages
@@ -151,7 +154,7 @@ def handle_event_async(event):
                 return
 
             # Process through OpenAI
-            openai_response = process_openai_response(message_text)
+            openai_response = process_openai_response(message_text, event["ts"])
             cache_response(message_text, openai_response)
 
             # Respond back in the same thread
