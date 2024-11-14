@@ -14,7 +14,6 @@ def log_to_apache_error_log(message):
     Logs a message to Apache's error log.
     """
     logging.error(message)
-
 def process_openai_response(message_text):
     """
     Process the Slack message through OpenAI and return the assistant's response.
@@ -28,10 +27,15 @@ def process_openai_response(message_text):
     log_to_apache_error_log(f"Messages: {json.dumps(messages)}")
 
     # Call OpenAI
-    response = chat_completion_request(messages, tools=tools)
-    if response and "choices" in response:
-        assistant_message = response.choices[0].message["content"]
-        return assistant_message
+    try:
+        response = chat_completion_request(messages, tools=tools)
+        log_to_apache_error_log(f"OpenAI Response: {json.dumps(response)}")
+        if response and "choices" in response:
+            assistant_message = response.choices[0].message["content"]
+            return assistant_message
+    except Exception as e:
+        log_to_apache_error_log(f"OpenAI API Error: {str(e)}")
+
     return "I'm sorry, I couldn't process your request at the moment."
 
 def handle_event_async(event):
