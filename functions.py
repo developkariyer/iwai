@@ -6,12 +6,20 @@ from env_secrets import DATABASE_CONFIG
 def log_to_apache_error_log(message):
     logging.error(message)
 
-# Function: Get Product Details
-def get_product_details(product_id=None, iwasku=None, name=None, eanGtin=None, wisersellId=None):
+
+
+def get_product_details(arguments):
     """
     Query product details from the MySQL database based on provided arguments.
     """
     try:
+        # Extract parameters from the dictionary
+        product_id = arguments.get("id")
+        iwasku = arguments.get("iwasku")
+        name = arguments.get("name")
+        eanGtin = arguments.get("eanGtin")
+        wisersellId = arguments.get("wisersellId")
+
         # Connect to the MySQL database
         connection = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = connection.cursor(dictionary=True)
@@ -57,6 +65,7 @@ def get_product_details(product_id=None, iwasku=None, name=None, eanGtin=None, w
         if connection.is_connected():
             cursor.close()
             connection.close()
+
 
 # Function: List Variant Products
 def list_variant_products(arguments):
