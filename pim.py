@@ -3,18 +3,32 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_product_details",
-            "description": "Retrieve detailed information about a product based on its SKU or ID.",
+            "description": "Retrieve detailed information about a product based on its SKU, ID, name, or other identifiers.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "product_id": {"type": "string", "description": "The ID of the product."},
-                    "fields": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Optional list of specific fields to retrieve (e.g., name, dimensions, weight)."
+                    "id": {
+                        "type": "string",
+                        "description": "The unique ID of the product."
+                    },
+                    "iwasku": {
+                        "type": "string",
+                        "description": "The internal SKU of the product."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "A partial or full name of the product. Use this for fuzzy search (e.g., name LIKE %?%). Returns the first 10 matches ordered by name."
+                    },
+                    "eanGtin": {
+                        "type": "string",
+                        "description": "The EAN/GTIN identifier of the product."
+                    },
+                    "wisersellId": {
+                        "type": "string",
+                        "description": "The Wisersell identifier of the product."
                     }
                 },
-                "required": ["product_id"]
+                "required": ["id", "iwasku", "name", "eanGtin", "wisersellId"]
             }
         }
     },
